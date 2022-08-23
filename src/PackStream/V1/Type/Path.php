@@ -17,10 +17,10 @@ class Path implements I_PackStruct {
 		if(AIC::notNodeList($this->nodes)) {
 			throw new PackEx('Field nodes must only contain ' . Node::class . ' objects');
 		}
-		if(AIC::notRelList($this->rels)) {
+		if(AIC::notURelList($this->rels)) {
 			throw new PackEx('Field rels must only contain ' . Relationship::class . ' objects');
 		}
-		if(AIC::notRelList($this->ids)) {
+		if(AIC::notIntList($this->ids)) {
 			throw new PackEx('Field ids must only contain int items');
 		}
 	}

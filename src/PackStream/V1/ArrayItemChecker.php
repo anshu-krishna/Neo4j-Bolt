@@ -2,7 +2,7 @@
 namespace Krishna\Neo4j\PackStream\V1;
 
 use Krishna\Neo4j\Helper\T_StaticOnly;
-use Krishna\Neo4j\PackStream\V1\Type\{Node, Relationship};
+use Krishna\Neo4j\PackStream\V1\Type\{Node, UnboundRelationship};
 use Throwable;
 
 class ArrayItemChecker {
@@ -17,10 +17,10 @@ class ArrayItemChecker {
 			return true;
 		}
 	}
-	protected static function relListTester(Relationship ...$items) {}
-	public static function notRelList(array $values): bool {
+	protected static function urelListTester(UnboundRelationship ...$items) {}
+	public static function notURelList(array $values): bool {
 		try {
-			static::relListTester(...$values);
+			static::urelListTester(...$values);
 			return false;
 		} catch (Throwable $th) {
 			return true;
