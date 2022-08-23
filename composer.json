@@ -1,0 +1,22 @@
+{
+	"name": "anshu-krishna/neo4j-bolt",
+	"description": "PHP library for communication with Neo4j graph database over TCP socket with Bolt protocol",
+	"keywords": ["neo4j", "bolt", "socket", "database"],
+	"type": "library",
+	"license": "MIT",
+	"version": "1.0",
+	"require": {
+		"php": ">=8.1"
+	},
+	"authors": [
+		{
+			"name": "Anshu Krishna",
+			"email": "anshu.krishna5@gmail.com"
+		}
+	],
+	"autoload": {
+		"psr-4": {
+			"Krishna\\Neo4j\\": "src/"
+		}
+	}
+}
