@@ -72,7 +72,7 @@ class Packer {
 						=> static::packStructure($value),
 				// 	$value instanceof I_Structure
 				// 		=> (static::BOLT->proto === null)
-				// 		? static::packStructure($value->toGenericStructure())
+				// 		? static::packStructure($value->toGenericStruct())
 				// 		: static::packStructure(static::BOLT->proto::Structure2GStruct($value)),
 					default => static::packMap((array)$value)
 				};

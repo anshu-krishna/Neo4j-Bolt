@@ -13,6 +13,8 @@ trait T_GenericConverter {
 		if($struct->sig !== static::SIG) { return null; } // Intellsense error indicator is irrelevant
 		try {
 			return new static(...$struct->fields);
+		} catch(PackEx $px) {
+			throw new PackEx('Invalid ' . static::class . '; ' . $px->getMessage());
 		} catch (\Throwable $th) {
 			throw new PackEx('Invalid ' . static::class);
 		}
@@ -53,6 +55,8 @@ trait T_GenericConverter {
 		if($struct->sig !== $SIG) { return null; }
 		try {
 			return new static(...$struct->fields);
+		} catch(PackEx $px) {
+			throw new PackEx('Invalid ' . static::class . '; ' . $px->getMessage());
 		} catch (\Throwable $th) {
 			throw new PackEx('Invalid ' . static::class);
 		}
