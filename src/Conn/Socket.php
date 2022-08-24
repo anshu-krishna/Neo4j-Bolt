@@ -6,7 +6,7 @@ use Krishna\Neo4j\Ex\ConnEx;
 use Krishna\Neo4j\Helper\ErrorHandler;
 
 final class Socket implements I_Conn {
-	const TIMEOUT_CODES = [11, 10060];
+	// const TIMEOUT_CODES = [11, 10060];
 	private \Socket|false $tcp = false;
 	
 	public function __destruct() { $this->disconnect(); }
@@ -58,12 +58,11 @@ final class Socket implements I_Conn {
 			socket_set_option($this->tcp, SOL_SOCKET, SO_RCVTIMEO, $cfg)
 			&& socket_set_option($this->tcp, SOL_SOCKET, SO_SNDTIMEO, $cfg);
 	}
-	public function write(string|Buffer $buffer) {
+	public function write(string|Buffer $buffer): void {
 		if($this->tcp === false) {
 			throw new ConnEx('Socket not initialized');
 		}
 		if($buffer instanceof Buffer) {
-			$buffer->makeReadable();
 			$size = $buffer->getSize();
 			$buffer = $buffer->__toString();
 		} else {
@@ -75,6 +74,29 @@ final class Socket implements I_Conn {
 			if($sent === false) { $this->throwEx(); }
 			$buffer = mb_strcut($buffer, $sent, null, '8bit');
 			$size -= $sent;
+		}
+		ErrorHandler::resume();
+	}
+	public function writeIterable(iterable $parts): void {
+		if($this->tcp === false) {
+			throw new ConnEx('Socket not initialized');
+		}
+		ErrorHandler::pause();
+		foreach($parts as $buffer) {
+			if(is_string($buffer)) {
+				$size = mb_strlen($buffer, '8bit');
+			} elseif($buffer instanceof Buffer) {
+				$size = $buffer->getSize();
+				$buffer = $buffer->__toString();
+			} else {
+				throw new ConnEx('Only string or Buffer can be written');
+			}
+			while (0 < $size) {
+				$sent = socket_write($this->tcp, $buffer, $size);
+				if($sent === false) { $this->throwEx(); }
+				$buffer = mb_strcut($buffer, $sent, null, '8bit');
+				$size -= $sent;
+			}
 		}
 		ErrorHandler::resume();
 	}
@@ -94,7 +116,7 @@ final class Socket implements I_Conn {
 		ErrorHandler::resume();
 		return $output;
 	}
-	public function disconnect() {
+	public function disconnect(): void {
 		if($this->tcp !== false) {
 			ErrorHandler::pause();
 			socket_shutdown($this->tcp);
@@ -103,7 +125,7 @@ final class Socket implements I_Conn {
 			ErrorHandler::resume();
 		}
 	}
-	private function throwEx() {
+	private function throwEx(): void {
 		ErrorHandler::resume();
 		$code = socket_last_error($this->tcp);
 		$this->tcp = false;

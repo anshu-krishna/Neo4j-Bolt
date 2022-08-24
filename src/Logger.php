@@ -12,14 +12,14 @@ final class Logger {
 		$this->callback = $callback;
 	}
 
-	public function hexify(string $data): string {
-		$rowEnd = $this->rowSize - 1; $wordEnd = $this->wordSize - 1;
+	public static function hexify(string $data, int $rowSize = 20, int $wordSize = 4): string {
+		$rowEnd = $rowSize - 1; $wordEnd = $wordSize - 1;
 		$i = -1; $hex = [];
 		foreach(str_split(unpack('H*', $data)[1], 2) as $byte) {
 			$i++;
 			$hex[] = $byte;
-			if($i % $this->rowSize === $rowEnd) { $hex[] = "\n"; }
-			elseif($i % $this->wordSize === $wordEnd) { $hex[] = '  '; }
+			if($i % $rowSize === $rowEnd) { $hex[] = "\n"; }
+			elseif($i % $wordSize === $wordEnd) { $hex[] = '  '; }
 			else { $hex[] = ' '; }
 		}
 		return trim(implode('', $hex));
@@ -35,12 +35,14 @@ final class Logger {
 		} else { ($this->callback)($str); }
 	}
 	
-	public function logRead(Buffer $buffer, ?string $title = null): void {
+	public function logRead(string|Buffer $content, ?string $title = null): void {
 		$title = ($title === null) ? '' : " [{$title}]";
-		self::log(self::hexify($buffer->__toString()), 'Read' . $title);
+		if($content instanceof Buffer) { $content = $content->__toString(); }
+		$this->log(self::hexify($content, $this->rowSize, $this->wordSize), 'Read' . $title);
 	}
-	public function logWrite(Buffer $buffer, ?string $title = null): void {
+	public function logWrite(string|Buffer $content, ?string $title = null): void {
 		$title = ($title === null) ? '' : " [{$title}]";
-		self::log(self::hexify($buffer->__toString()), 'Write' . $title);
+		if($content instanceof Buffer) { $content = $content->__toString(); }
+		$this->log(self::hexify($content, $this->rowSize, $this->wordSize), 'Write' . $title);
 	}
 }

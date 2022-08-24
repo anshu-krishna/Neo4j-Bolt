@@ -6,6 +6,7 @@ class ErrorHandler {
 	private static bool $paused = false;
 	public static function handler(int $errno, string $errstr, string $errfile, int $errline): bool {
 		// static::resume();
+		error_clear_last();
 		return true;
 	}
 	public static function pause() {
