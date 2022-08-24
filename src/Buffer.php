@@ -28,6 +28,18 @@ final class Buffer {
 			throw new BufferEx('Buffer is in read mode');
 		}
 	}
+	public function writeIterable(iterable $iter): void {
+		if($this->length !== null) {
+			throw new BufferEx('Buffer is in read mode');
+		}
+		foreach($iter as $bytes) {
+			if(is_string($bytes)) {
+				$this->store[] = $bytes;
+			} else {
+				throw new BufferEx('Only string can be written in the Buffer');
+			}
+		}
+	}
 	public function read(int $len = 0): string {
 		if($this->length === null) {
 			throw new BufferEx('Buffer is in write mode');
@@ -42,7 +54,7 @@ final class Buffer {
 		$this->offset += $len;
 		return $part;
 	}
-	public function getChunks(int $chunkSize = 65535) : \Generator {
+	public function getChunks(int $chunkSize = 65535) : iterable {
 		if($this->length === null) {
 			throw new BufferEx('Buffer is in write mode');
 		}

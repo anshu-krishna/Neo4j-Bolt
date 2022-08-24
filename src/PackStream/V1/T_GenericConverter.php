@@ -13,17 +13,15 @@ trait T_GenericConverter {
 		if($struct->sig !== static::SIG) { return null; } // Intellsense error indicator is irrelevant
 		try {
 			return new static(...$struct->fields);
-		} catch(PackEx $px) {
-			throw new PackEx('Invalid ' . static::class . '; ' . $px->getMessage());
 		} catch (\Throwable $th) {
-			throw new PackEx('Invalid ' . static::class);
+			throw new PackEx('Invalid ' . static::class . '; ' . $th->getMessage());
 		}
 	}
 	public function toGenericStruct() : GenericStruct {
 		$refProps = (new \ReflectionClass($this))->getProperties(\ReflectionProperty::IS_PUBLIC);
 		$props = [];
 		foreach($refProps as $prop) {
-			$props[$prop->getName()] = $prop->getValue($this);
+			$props[] = $prop->getValue($this);
 		}
 		return new GenericStruct(static::SIG, ...$props); // Intellsense error indicator is irrelevant
 	}
@@ -55,10 +53,8 @@ trait T_GenericConverter {
 		if($struct->sig !== $SIG) { return null; }
 		try {
 			return new static(...$struct->fields);
-		} catch(PackEx $px) {
-			throw new PackEx('Invalid ' . static::class . '; ' . $px->getMessage());
 		} catch (\Throwable $th) {
-			throw new PackEx('Invalid ' . static::class);
+			throw new PackEx('Invalid ' . static::class . '; ' . $px->getMessage());
 		}
 	}
 	public function toGenericStruct() : GenericStruct {

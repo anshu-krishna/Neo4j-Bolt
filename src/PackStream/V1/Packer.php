@@ -3,9 +3,10 @@ namespace Krishna\Neo4j\PackStream\V1;
 
 use Krishna\Neo4j\Buffer;
 use Krishna\Neo4j\Ex\PackEx;
+use Krishna\Neo4j\Helper\T_StaticOnly;
 
 class Packer {
-	use \Krishna\Neo4j\Helper\T_StaticOnly;
+	use T_StaticOnly;
 
 	const TINY = 16;
 	const MEDIUM = 256;
@@ -70,10 +71,8 @@ class Packer {
 						=> static::packBytes($value),
 					$value instanceof GenericStruct
 						=> static::packStructure($value),
-				// 	$value instanceof I_Structure
-				// 		=> (static::BOLT->proto === null)
-				// 		? static::packStructure($value->toGenericStruct())
-				// 		: static::packStructure(static::BOLT->proto::Structure2GStruct($value)),
+					$value instanceof I_PackStruct
+						=> static::packStructure($value->toGenericStruct()),
 					default => static::packMap((array)$value)
 				};
 				break;
@@ -82,7 +81,7 @@ class Packer {
 				break;
 		}
 	}
-	public function packInteger(int $value): iterable {
+	public static function packInteger(int $value): iterable {
 		$LITTLE_ENDIAN = static::LittleEndian();
 		if ($value >= -16 && $value <= 127) {
 			//TINY_INT
@@ -107,32 +106,32 @@ class Packer {
 		}
 	}
 
-	public function packFloat(float $value): iterable {
+	public static function packFloat(float $value): iterable {
 		$packed = pack('d', $value);
 		yield chr(0xC1) . (static::LittleEndian() ? strrev($packed) : $packed);
 	}
-	public function packBool(bool $value): iterable {
+	public static function packBool(bool $value): iterable {
 		yield chr($value ? 0xC3 : 0xC2);
 	}
-	public function packString(string $value): iterable {
+	public static function packString(string $value): iterable {
 		$length = mb_strlen($value, '8bit');
 		yield static::size($length, 0x80, 0xD0, 0xD1, 0xD2, 'String is too long');
 		yield $value;
 	}
-	public function packMap(array $value): iterable {
+	public static function packMap(array $value): iterable {
 		yield static::size(count($value), 0xA0, 0xD8, 0xD9, 0xDA, 'Map has too many items');
 		foreach($value as $k => $v) {
 			yield from static::packString((string) $k);
 			yield from static::pack($v);
 		}
 	}
-	public function packList(array $value): iterable {
+	public static function packList(array $value): iterable {
 		yield static::size(count($value), 0x90, 0xD4, 0xD5, 0xD6, 'List has too many items');
 		foreach($value as $v) {
 			yield from static::pack($v);
 		}
 	}
-	public function packBytes(Type\Bytes $bytes) : iterable {
+	public static function packBytes(Type\Bytes $bytes) : iterable {
 		$size = $bytes->length;
 
 		if($size < static::MEDIUM) {
@@ -146,7 +145,24 @@ class Packer {
 		}
 		yield $bytes->bytes;
 	}
-	public function packStructure(GenericStruct $struct): iterable {
+	public static function packStructure(GenericStruct $struct): iterable {
+		$length = count($struct->fields);
+		if ($length < static::TINY) { //TINY_STRUCT
+			yield pack('C', 0xB0 | $length);
+		} elseif ($length < static::MEDIUM) { //STRUCT_8
+			yield chr(0xDC) . pack('C', $length);
+		} elseif ($length < static::LARGE) { //STRUCT_16
+			yield chr(0xDD) . pack('n', $length);
+		} else {
+			throw new PackEx('Structure too big');
+		}
+		yield chr($struct->sig);
+		foreach($struct->fields as $val) {
+			yield from static::pack($val);
+		}
+	}
+	/*
+	public static function packStructure(GenericStruct $struct): iterable {
 		$length = count($struct->fields);
 		if ($length < static::TINY) { //TINY_STRUCT
 			yield pack('n', 1) . pack('C', 0xB0 | $length);
@@ -158,15 +174,18 @@ class Packer {
 			throw new PackEx('Structure too big');
 		}
 		yield pack('n', 1) . chr($struct->sig);
+
 		foreach($struct->fields as $val) {
 			$packed = Buffer::Writable();
 			foreach(static::pack($val) as $bytes) {
 				$packed->write($bytes);
 			}
+			$packed->makeReadable();
 			foreach($packed->getChunks() as $chunk) {
 				yield $chunk;
 			}
 		}
 		yield hex2bin('0000');
 	}
+	*/
 }

@@ -1,7 +1,5 @@
 <?php
 require_once "vendor/autoload.php";
 
-use Krishna\Neo4j\PackStream\V1\Type\Date;
+use Krishna\Neo4j\Buffer;
 
-$d = new Date(15);
-echo $d;

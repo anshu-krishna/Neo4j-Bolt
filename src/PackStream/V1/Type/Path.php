@@ -42,6 +42,6 @@ class Path implements I_PackStruct {
 		return JSON::encode($obj);
 	}
 	public function toGenericStruct() : GenericStruct {
-		return new GenericStruct(static::SIG, [$this->nodes, $this->rels, $this->ids]);
+		return new GenericStruct(static::SIG, $this->nodes, $this->rels, $this->ids);
 	}
 }

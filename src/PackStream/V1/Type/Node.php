@@ -14,7 +14,7 @@ class Node implements I_PackStruct {
 		public readonly array $labels,
 		public readonly array $properties
 	) {
-		if(AIC::notNodeList($this->labels)) {
+		if(AIC::notStringList($this->labels)) {
 			throw new PackEx('Field labels must only contain string items');
 		}
 	}
