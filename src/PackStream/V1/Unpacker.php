@@ -42,7 +42,7 @@ class Unpacker {
 	}
 	protected static function checkList(Buffer $buffer, int $tag): iterable {
 		$high = $tag & 0xF0;
-		yield static::unpackBool($buffer, $tag);
+		// yield static::unpackBool($buffer, $tag);
 		yield static::unpackInteger($buffer, $tag, $high);
 		yield static::unpackFloat($buffer, $tag);
 		yield static::unpackString($buffer, $tag, $high);
@@ -55,11 +55,16 @@ class Unpacker {
 			return null;
 		}
 		$tag = ord($buffer->read(1));
-		if($tag === 0xC0) { return null; }
+		switch($tag) {
+			case 0xC0: return null;
+			case 0xC2: return false;
+			case 0xC3: return true;
+		}
+
 		foreach(static::checkList($buffer, $tag) as $v) {
 			if($v !== null) { return $v; }
 		}
-		return null;
+		throw new PackEx('Invalid binary');
 	}
 	public static function unpackInteger(Buffer $buffer, int $tag, int $high): ?int {
 		if($high <= 0x70 || 0xF0 <= $high) {
