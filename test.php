@@ -7,7 +7,6 @@ use Krishna\Neo4j\Buffer;
 use Krishna\Neo4j\Conn\Socket;
 use Krishna\Neo4j\E_Version;
 use Krishna\Neo4j\Logger;
-use Krishna\Neo4j\Protocol\Helper;
 
 set_time_limit(5);
 
@@ -34,4 +33,4 @@ $bolt = new Bolt(
 	auth: AuthToken::basic('neo4j', 'open'),
 	logger: new Logger(rowSize: 40)
 );
-$bolt->useVersion(E_Version::V4_1)->getConnection();
+$proto = $bolt->useVersion(E_Version::V4_1)->getConnection();

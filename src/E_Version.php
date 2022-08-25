@@ -13,6 +13,9 @@ enum E_Version : int {
 	public function toClass(): string {
 		return Bolt::getVersionMeta()[$this->value]['class'];
 	}
+	public function toVersionNumber(): string {
+		return (Bolt::getVersionMeta()[$this->value]['class'])::VERSION;
+	}
 	public static function fromBin(string $ver): ?static {
 		$meta = Bolt::getVersionMeta();
 		return match($ver) {

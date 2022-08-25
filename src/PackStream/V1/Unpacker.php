@@ -119,24 +119,6 @@ class Unpacker {
 		if($size === null) { return null; }
 		return new Type\Bytes($buffer->read($size));
 	}
-	protected static function convert2PackStruct(GenericStruct $struct): ?I_PackStruct {
-		return match($struct->sig) {
-			0x4E => Type\Node::fromGenericStruct($struct),
-			0x52 => Type\Relationship::fromGenericStruct($struct),
-			0x72 => Type\UnboundRelationship::fromGenericStruct($struct),
-			0x50 => Type\Path::fromGenericStruct($struct),
-			0x44 => Type\Date::fromGenericStruct($struct),
-			0x54 => Type\Time::fromGenericStruct($struct),
-			0x74 => Type\LocalTime::fromGenericStruct($struct),
-			0x46 => Type\DateTime::fromGenericStruct($struct),
-			0x66 => Type\DateTimeZoneId::fromGenericStruct($struct),
-			0x64 => Type\LocalDateTime::fromGenericStruct($struct),
-			0x45 => Type\Duration::fromGenericStruct($struct),
-			0x58 => Type\Point2D::fromGenericStruct($struct),
-			0x59 => Type\Point3D::fromGenericStruct($struct),
-			default => null
-		};
-	}
 	public static function unpackStruct(Buffer $buffer, int $tag, int $high): GenericStruct|I_PackStruct|null {
 		$size = static::fetchSize($buffer, $tag, $high, 0xB0, 0xDC, 0xDD, false);
 		if($size === null) { return null; }
@@ -146,10 +128,27 @@ class Unpacker {
 			$fields[] = static::unpack($buffer);
 		}
 		$gstruct = new GenericStruct($sig, ...$fields);
-		if(($pstruct = static::convert2PackStruct($gstruct)) !== null) {
-			return $pstruct;
-		} else {
-			return $gstruct;
-		}
+		// Convert to I_PackStruct
+		$pstruct = match($gstruct->sig) {
+			0x70 => null, // Short-circuit for Protocol\Reply\Success,
+			0x7E => null, // Short-circuit for Protocol\Reply\Ignored,
+			0x7F => null, // Short-circuit for Protocol\Reply\Failure,
+			0x71 => null, // Short-circuit for Protocol\Reply\Record,
+			0x4E => Type\Node::fromGenericStruct($gstruct),
+			0x52 => Type\Relationship::fromGenericStruct($gstruct),
+			0x72 => Type\UnboundRelationship::fromGenericStruct($gstruct),
+			0x50 => Type\Path::fromGenericStruct($gstruct),
+			0x44 => Type\Date::fromGenericStruct($gstruct),
+			0x54 => Type\Time::fromGenericStruct($gstruct),
+			0x74 => Type\LocalTime::fromGenericStruct($gstruct),
+			0x46 => Type\DateTime::fromGenericStruct($gstruct),
+			0x66 => Type\DateTimeZoneId::fromGenericStruct($gstruct),
+			0x64 => Type\LocalDateTime::fromGenericStruct($gstruct),
+			0x45 => Type\Duration::fromGenericStruct($gstruct),
+			0x58 => Type\Point2D::fromGenericStruct($gstruct),
+			0x59 => Type\Point3D::fromGenericStruct($gstruct),
+			default => null
+		};
+		return ($pstruct === null) ? $gstruct : $pstruct;
 	}
 }

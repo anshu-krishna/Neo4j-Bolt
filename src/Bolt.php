@@ -2,6 +2,7 @@
 namespace Krishna\Neo4j;
 
 use Krishna\Neo4j\Conn\E_ConnType;
+use Krishna\Neo4j\Ex\ConnEx;
 use Krishna\Neo4j\Protocol\A_Bolt;
 
 class Bolt {
@@ -24,6 +25,7 @@ class Bolt {
 		string $host = '127.0.0.1',
 		private readonly int $port = 7687,
 		private readonly E_ConnType $connType = E_ConnType::Socket,
+		private readonly ?array $routing = null,
 		private readonly float $timeout = 15,
 		private readonly ?Logger $logger = null,
 	) {
@@ -58,7 +60,7 @@ class Bolt {
 		$this->protocols = $p;
 		return $this;
 	}
-	public function getConnection(): ?A_Bolt {
+	public function getConnection(): A_Bolt {
 		$socket = new ($this->connType->value);
 		$socket->connect($this->host, $this->port, $this->timeout);
 		$pkt = Buffer::Writable(hex2bin('6060b017'));
@@ -68,8 +70,15 @@ class Bolt {
 		$socket->write($pkt);
 		$pkt = $socket->read(4);
 		$this->logger?->logRead($pkt, 'Handshake');
-		$ver = E_Version::fromBin($pkt);
-		var_dump($ver?->toClass());
-		return null;
+		if($pkt === 'HTTP') {
+			$socket->disconnect();
+			throw new ConnEx("Cannot to connect to Bolt service on {$this->host}:{$this->port}; Looks like HTTP;");
+		}
+		$class = (E_Version::fromBin($pkt))?->toClass();
+		if($class === null) {
+			$socket->disconnect();
+			throw new ConnEx("Cannot to connect to Bolt service on {$this->host}:{$this->port}; Unsupported protocol version(s);");
+		}
+		return new ($class)($socket, $this->auth, $this->routing, $this->logger);
 	}
 }
