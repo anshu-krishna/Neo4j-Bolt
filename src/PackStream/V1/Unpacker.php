@@ -42,9 +42,9 @@ class Unpacker {
 	}
 	protected static function checkList(Buffer $buffer, int $tag): iterable {
 		$high = $tag & 0xF0;
-		// yield static::unpackBool($buffer, $tag);
+		// yield static::unpackBool($buffer, $tag); // Short-circuited
 		yield static::unpackInteger($buffer, $tag, $high);
-		yield static::unpackFloat($buffer, $tag);
+		// yield static::unpackFloat($buffer, $tag); // Short-circuited
 		yield static::unpackString($buffer, $tag, $high);
 		yield static::unpackList($buffer, $tag, $high);
 		yield static::unpackMap($buffer, $tag, $high);
@@ -57,8 +57,9 @@ class Unpacker {
 		$tag = ord($buffer->read(1));
 		switch($tag) {
 			case 0xC0: return null;
-			case 0xC2: return false;
-			case 0xC3: return true;
+			case 0xC2: return false; // Short-circuit for False
+			case 0xC3: return true; // Short-circuit for True
+			case 0xC1: return (float)static::fetchEndian($buffer, 'd', 8); // Short-circuit for Float
 		}
 
 		foreach(static::checkList($buffer, $tag) as $v) {
