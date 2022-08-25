@@ -5,7 +5,8 @@ use ArrayObject;
 use Krishna\Neo4j\PackStream\V1\{GenericStruct, I_PackStruct};
 
 class Success extends ArrayObject implements I_PackStruct {
-	const SIG = 0x7F;
+	const SIG = 0x70;
+	
 	public function __construct(array $metadata) {
 		parent::__construct($metadata, ArrayObject::STD_PROP_LIST | ArrayObject::ARRAY_AS_PROPS);
 	}

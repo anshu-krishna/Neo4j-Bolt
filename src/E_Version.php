@@ -8,16 +8,16 @@ enum E_Version : int {
 	case V4_4 = 4;
 	
 	public function toBin(): string {
-		return Bolt::getVersionMeta()[$this->value]['bin'];
+		return BoltMaker::getVersionMeta()[$this->value]['bin'];
 	}
 	public function toClass(): string {
-		return Bolt::getVersionMeta()[$this->value]['class'];
+		return BoltMaker::getVersionMeta()[$this->value]['class'];
 	}
 	public function toVersionNumber(): string {
-		return (Bolt::getVersionMeta()[$this->value]['class'])::VERSION;
+		return (BoltMaker::getVersionMeta()[$this->value]['class'])::VERSION;
 	}
 	public static function fromBin(string $ver): ?static {
-		$meta = Bolt::getVersionMeta();
+		$meta = BoltMaker::getVersionMeta();
 		return match($ver) {
 			$meta[1]['bin'] => self::V4_1,
 			$meta[2]['bin'] => self::V4_2,

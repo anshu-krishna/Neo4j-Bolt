@@ -5,7 +5,7 @@ use Krishna\Neo4j\Conn\E_ConnType;
 use Krishna\Neo4j\Ex\ConnEx;
 use Krishna\Neo4j\Protocol\A_Bolt;
 
-class Neo4j {
+class BoltMaker {
 	private static ?array $vmeta = null;
 	public static function getVersionMeta(): array {
 		self::$vmeta ??= [
@@ -60,7 +60,7 @@ class Neo4j {
 		$this->protocols = $p;
 		return $this;
 	}
-	public function getBolt(): A_Bolt {
+	public function makeBolt(): A_Bolt {
 		$socket = new ($this->connType->value);
 		$socket->connect($this->host, $this->port, $this->timeout);
 		$pkt = Buffer::Writable(hex2bin('6060b017'));

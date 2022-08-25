@@ -57,7 +57,7 @@ abstract class A_Bolt {
 		} elseif($reply instanceof Reply\Failure) {
 			throw new ConnEx($reply->message, $reply->code);
 		} else {
-			throw new BoltEx('Unknown error');
+			throw new BoltEx('Unknown Error');
 		}
 	}
 	public function __destruct() {
@@ -90,7 +90,6 @@ abstract class A_Bolt {
 		}
 		$buffer->makeReadable();
 		$value = Unpacker::unpack($buffer);
-		
 		// Convert to Reply Struct
 		if($value instanceof GenericStruct) {
 			$reply = match($value->sig) {
