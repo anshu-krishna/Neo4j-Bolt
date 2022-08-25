@@ -10,10 +10,10 @@ class Success extends ArrayObject implements I_PackStruct {
 		parent::__construct($metadata, ArrayObject::STD_PROP_LIST | ArrayObject::ARRAY_AS_PROPS);
 	}
 	public static function fromGenericStruct(GenericStruct $struct): ?static {
-		if($struct->sig !== 0x70) { return null; }
+		if($struct->sig !== static::SIG) { return null; }
 		return new static($struct->fields[0] ?? []);
 	}
 	public function toGenericStruct() : GenericStruct {
-		return new GenericStruct(0x70, $this->getArrayCopy());
+		return new GenericStruct(static::SIG, $this->getArrayCopy());
 	}
 }

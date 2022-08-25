@@ -1,18 +1,14 @@
 <?php
 namespace Krishna\Neo4j\Protocol;
 
-use Krishna\Neo4j\AuthToken;
-use Krishna\Neo4j\Buffer;
 use Krishna\Neo4j\Conn\I_Conn;
-use Krishna\Neo4j\Ex\PackEx;
-use Krishna\Neo4j\Logger;
-use Krishna\Neo4j\PackStream\V1\GenericStruct;
-use Krishna\Neo4j\PackStream\V1\I_PackStruct;
-use Krishna\Neo4j\PackStream\V1\Packer;
-use Krishna\Neo4j\PackStream\V1\Unpacker;
+use Krishna\Neo4j\{AuthToken, Buffer, Logger};
+use Krishna\Neo4j\Ex\{BoltEx, ConnEx, PackEx};
+use Krishna\Neo4j\PackStream\V1\{GenericStruct, Packer, Unpacker};
 
 abstract class A_Bolt {
-	protected static function packSendable(?Buffer &$forLog, int $sig, array $fields): iterable {
+	public readonly array $connMeta;
+	protected static function packetGenerator(?Buffer &$forLog, int $sig, array $fields): iterable {
 		$forLog ??= Buffer::Writable();
 		$length = count($fields);
 		if ($length < Packer::TINY) { //TINY_STRUCT
@@ -56,19 +52,26 @@ abstract class A_Bolt {
 			$token['routing'] = (object) $routing;
 		}
 		$reply = $this->write('Hello', 0x01, [$token]);
+		if($reply instanceof Reply\Success) {
+			$this->connMeta = $reply->getArrayCopy();
+		} elseif($reply instanceof Reply\Failure) {
+			throw new ConnEx($reply->message, $reply->code);
+		} else {
+			throw new BoltEx('Unknown error');
+		}
+	}
+	public function __destruct() {
+		$this->disconnect();
 	}
 	protected function write(string $logTitle, int $sig, array $fields = [], bool $autoRetry = true, bool $noReply = false) {
-		$packet = Buffer::Writable();
-		$packet->writeIterable(static::packSendable($send, $sig, $fields));
-		$packet->makeReadable();
-		$this->CONN->write($packet);
-		$this->logger?->logWrite($send, $logTitle);
+		$this->CONN->writeIterable(static::packetGenerator($packet, $sig, $fields));
+		$this->logger?->logWrite($packet, $logTitle);
 		if($noReply) { return; }
 		$reply = $this->read($logTitle);
 		if($autoRetry && $reply instanceof Reply\Ignored) {
 			$this->reset();
 			$this->CONN->write($packet);
-			$this->logger?->logWrite($send, $logTitle);
+			$this->logger?->logWrite($packet, $logTitle);
 			$reply = $this->read($logTitle);
 		}
 		return $reply;
@@ -107,7 +110,13 @@ abstract class A_Bolt {
 		);
 		return $value;
 	}
-	public function reset() {
+	protected function reset() {
 		return $this->write('Reset', 0x02, autoRetry: false);
+	}
+	public function disconnect() {
+		try {
+			$this->write('Goodbye', 0x02, autoRetry: false, noReply: true);
+		} catch (ConnEx $th) {}
+		$this->CONN->disconnect();
 	}
 }
