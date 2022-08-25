@@ -13,40 +13,24 @@ final class Socket implements I_Conn {
 
 	public function connect(string $host, int $port, float $timeout) {
 		if($this->tcp !== false) { return; }
-
-		$error = null;
-		$code = 0;
-
-		ErrorHandler::pause();
-		while(true) {
-			$error = match(false) {
-				extension_loaded('sockets') =>
-					'PHP Extension sockets not enabled',
-				($this->tcp = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) =>
-					'Cannot create socket',
-				socket_set_block($this->tcp) =>
-					'Cannot set socket into blocking mode',
-				socket_set_option($this->tcp, SOL_TCP, TCP_NODELAY, 1) =>
-					'Cannot set socket options',
-				socket_set_option($this->tcp, SOL_SOCKET, SO_KEEPALIVE, 1) =>
-					'Cannot set socket options',
-				$this->updateTimeout($timeout) =>
-					'Cannot set socket timeout',
-				default =>
-					null
-			};
-			if($error !== null) { break; }
-			if(socket_connect($this->tcp, $host, $port) === false) {
-				$code = socket_last_error($this->tcp);
-				$error = socket_strerror($code);
-				break;
-			}
-			break;
+		if(!extension_loaded('sockets')) {
+			throw new ConnEx('PHP Extension sockets not enabled');
 		}
+		ErrorHandler::pause();
+		$error = match(false) {
+			($this->tcp = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) => true,
+			socket_set_block($this->tcp) => true,
+			socket_set_option($this->tcp, SOL_TCP, TCP_NODELAY, 1) => true,
+			socket_set_option($this->tcp, SOL_SOCKET, SO_KEEPALIVE, 1) => true,
+			$this->updateTimeout($timeout) => true,
+			socket_connect($this->tcp, $host, $port) => true,
+			default => false
+		};
 		ErrorHandler::resume();
-		if($error !== null) {
+		if($error) {
+			$error = socket_last_error();
 			$this->tcp = false;
-			throw new ConnEx($error, $code);
+			throw new ConnEx(socket_strerror($error), $error);
 		}
 	}
 	public function updateTimeout(float $timeout): bool {

@@ -51,7 +51,7 @@ abstract class A_Bolt {
 		if($routing !== null) {
 			$token['routing'] = (object) $routing;
 		}
-		$reply = $this->write('Hello', 0x01, [$token]);
+		$reply = $this->write('Hello', 0x01, [$token], false);
 		if($reply instanceof Reply\Success) {
 			$this->connMeta = $reply->getArrayCopy();
 		} elseif($reply instanceof Reply\Failure) {
