@@ -1,7 +1,8 @@
 <?php
 namespace Krishna\Neo4j\Protocol;
 
-use Krishna\Neo4j\Protocol\Reply\I_Reply;
+use Krishna\Neo4j\Ex\BoltEx;
+use Krishna\Neo4j\Protocol\Reply\{I_Reply, Success};
 
 class Bolt4_4 extends Bolt4_3 {
 	const VERSION = 4.4;
@@ -27,7 +28,14 @@ class Bolt4_4 extends Bolt4_3 {
 		?string $db = null,
 		?string $imp_user = null
 	): I_Reply {
-		return $this->write('Begin', 0x11, [static::makeExtra($bookmarks, $tx_timeout, $tx_metadata, $readMode, $db, $imp_user)]);
+		if($this->qstate['transact']) {
+			throw new BoltEx('Previous transaction has not been closed');
+		}
+		$reply = $this->write('Begin', 0x11, [static::makeExtra($bookmarks, $tx_timeout, $tx_metadata, $readMode, $db, $imp_user)]);
+		if($reply instanceof Success) {
+			$this->qstate['transact'] = true;
+		}
+		return $reply;
 	}
 	public function query(
 		string $query,

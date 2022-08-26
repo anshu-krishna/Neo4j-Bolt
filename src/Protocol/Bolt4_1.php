@@ -7,6 +7,11 @@ use Krishna\Neo4j\Protocol\Reply\{I_Reply, Success};
 
 class Bolt4_1 extends A_Bolt {
 	const VERSION = 4.1;
+	protected array $qstate = [
+		'transact' => false,
+		'meta' => null,
+		'closed' => false
+	];
 	protected static function makeExtra(
 		array $bookmarks,
 		int $tx_timeout,
@@ -41,13 +46,34 @@ class Bolt4_1 extends A_Bolt {
 		bool $readMode = false,
 		?string $db = null
 	): I_Reply {
-		return $this->write('Begin', 0x11, [static::makeExtra($bookmarks, $tx_timeout, $tx_metadata, $readMode, $db)]);
+		if($this->qstate['transact']) {
+			throw new BoltEx('Previous transaction has not been closed');
+		}
+		$reply = $this->write('Begin', 0x11, [static::makeExtra($bookmarks, $tx_timeout, $tx_metadata, $readMode, $db)]);
+		if($reply instanceof Success) {
+			$this->qstate['transact'] = true;
+		}
+		return $reply;
 	}
 	public function commit(): I_Reply {
-		return $this->write('Commit', 0x12);
+		if(!$this->qstate['transact']) {
+			throw new BoltEx('Transaction has not been started');
+		}
+		$reply = $this->write('Commit', 0x12);
+		if($reply instanceof Success) {
+			$this->qstate['transact'] = false;
+		}
+		return $reply;
 	}
 	public function rollback(): I_Reply {
-		return $this->write('Rollback', 0x13);
+		if(!$this->qstate['transact']) {
+			throw new BoltEx('Transaction has not been started');
+		}
+		$reply = $this->write('Rollback', 0x13);
+		if($reply instanceof Success) {
+			$this->qstate['transact'] = false;
+		}
+		return $reply;
 	}
 	public function query(
 		string $query,
