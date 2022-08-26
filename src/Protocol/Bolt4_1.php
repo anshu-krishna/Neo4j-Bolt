@@ -1,21 +1,36 @@
 <?php
 namespace Krishna\Neo4j\Protocol;
 
+use Krishna\Neo4j\Ex\BoltEx;
+use Krishna\Neo4j\Helper\ListType;
+
 class Bolt4_1 extends A_Bolt {
 	const VERSION = 4.1;
 	public function beginTransaction(
 		array $bookmarks = [],
-		int $tx_timeout = 15,
+		int $tx_timeout = -1,
 		?array $tx_metadata = null,
-		string $mode = 'w',
+		bool $readMode = false,
 		?string $db = null
 	) {
 		$extra = [];
-		$extra['bookmarks'] = $bookmarks;
-		$extra['tx_timeout'] = $tx_timeout;
-		$extra['tx_metadata'] = ($tx_metadata === null) ? null : (object) $tx_metadata;
-		$extra['mode'] = $mode;
-		$extra['db'] = $db;
+		if(ListType::isStringList($bookmarks)) {
+			$extra['bookmarks'] = $bookmarks;
+		} else {
+			throw new BoltEx('parameter bookmarks must be a list of strings');
+		}
+		if($tx_metadata > 0) {
+			$extra['tx_timeout'] = $tx_timeout;
+		}
+		if($tx_metadata !== null) {
+			$extra['tx_metadata'] = (object) $tx_metadata;
+		}
+		if($readMode) {
+			$extra['mode'] = 'r';
+		}
+		if($db !== null) {
+			$extra['db'] = $db;
+		}
 		return $this->write('Begin', 0x11, [$extra]);
 	}
 }

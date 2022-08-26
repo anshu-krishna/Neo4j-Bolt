@@ -3,7 +3,7 @@ namespace Krishna\Neo4j;
 
 use Krishna\Neo4j\Conn\E_ConnType;
 use Krishna\Neo4j\Ex\ConnEx;
-use Krishna\Neo4j\Protocol\A_Bolt;
+use Krishna\Neo4j\Protocol as P;
 
 class BoltMaker {
 	private static ?array $vmeta = null;
@@ -60,7 +60,7 @@ class BoltMaker {
 		$this->protocols = $p;
 		return $this;
 	}
-	public function makeBolt(): Protocol\Bolt4_4 | Protocol\Bolt4_3 | Protocol\Bolt4_2 | Protocol\Bolt4_1 | A_Bolt {
+	public function makeBolt(): P\Bolt4_4 | P\Bolt4_3 | P\Bolt4_2 | P\Bolt4_1 {
 		$socket = new ($this->connType->value);
 		$socket->connect($this->host, $this->port, $this->timeout);
 		$pkt = Buffer::Writable(hex2bin('6060b017'));
