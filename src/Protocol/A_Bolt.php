@@ -121,7 +121,7 @@ abstract class A_Bolt {
 		}
 		return $value;
 	}
-	protected function reset(): I_Reply {
+	public function reset(): I_Reply {
 		return $this->write('Reset', 0x02, autoRetry: false);
 	}
 	public function disconnect(): void {

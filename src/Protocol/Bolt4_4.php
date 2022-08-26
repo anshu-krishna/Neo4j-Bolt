@@ -1,8 +1,6 @@
 <?php
 namespace Krishna\Neo4j\Protocol;
 
-use Krishna\Neo4j\Ex\BoltEx;
-use Krishna\Neo4j\Helper\ListType;
 use Krishna\Neo4j\Protocol\Reply\I_Reply;
 
 class Bolt4_4 extends Bolt4_3 {
@@ -15,24 +13,7 @@ class Bolt4_4 extends Bolt4_3 {
 		?string $db,
 		?string $imp_user = null
 	): array {
-		$extra = [];
-		if(ListType::isStringList($bookmarks)) {
-			$extra['bookmarks'] = array_values($bookmarks);
-		} else {
-			throw new BoltEx('parameter bookmarks must be a list of strings');
-		}
-		if($tx_metadata > 0) {
-			$extra['tx_timeout'] = $tx_timeout;
-		}
-		if($tx_metadata !== null) {
-			$extra['tx_metadata'] = (object) $tx_metadata;
-		}
-		if($readMode) {
-			$extra['mode'] = 'r';
-		}
-		if($db !== null) {
-			$extra['db'] = $db;
-		}
+		$extra = parent::makeExtra($bookmarks, $tx_timeout, $tx_metadata, $readMode, $db);
 		if($imp_user !== null) {
 			$extra['imp_user'] = $imp_user;
 		}
@@ -51,6 +32,7 @@ class Bolt4_4 extends Bolt4_3 {
 	public function query(
 		string $query,
 		array $parameters = [],
+		bool $autoResetOnFaiure = true,
 		array $bookmarks = [],
 		int $tx_timeout = -1,
 		?array $tx_metadata = null,

@@ -3,7 +3,7 @@ namespace Krishna\Neo4j\Protocol;
 
 use Krishna\Neo4j\Ex\BoltEx;
 use Krishna\Neo4j\Helper\ListType;
-use Krishna\Neo4j\Protocol\Reply\I_Reply;
+use Krishna\Neo4j\Protocol\Reply\{I_Reply, Success};
 
 class Bolt4_1 extends A_Bolt {
 	const VERSION = 4.1;
@@ -52,6 +52,7 @@ class Bolt4_1 extends A_Bolt {
 	public function query(
 		string $query,
 		array $parameters = [],
+		bool $autoResetOnFaiure = true,
 		array $bookmarks = [],
 		int $tx_timeout = -1,
 		?array $tx_metadata = null,
