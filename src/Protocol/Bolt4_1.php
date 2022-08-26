@@ -35,6 +35,9 @@ class Bolt4_1 extends A_Bolt {
 		return $this->write('Begin', 0x11, [$extra]);
 	}
 	public function commit(): I_Reply {
-
+		return $this->write('Commit', 0x12);
+	}
+	public function rollback(): I_Reply {
+		return $this->write('Rollback', 0x13);
 	}
 }

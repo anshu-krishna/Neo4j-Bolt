@@ -14,3 +14,5 @@ $neo = new BoltMaker(
 $bolt = $neo->makeBolt();
 var_dump($bolt::VERSION);
 var_dump($bolt->beginTransaction());
+var_dump($bolt->commit());
+// var_dump($bolt->rollback());
