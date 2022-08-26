@@ -48,10 +48,21 @@ class Bolt4_4 extends Bolt4_3 {
 		?string $db = null,
 		?string $imp_user = null
 	): I_Reply {
-		return $this->write('Run', 0x10, [
+		$reply = $this->write('Run', 0x10, [
 			$query,
 			(object) $parameters,
 			static::makeExtra($bookmarks, $tx_timeout, $tx_metadata, $readMode, $db, $imp_user)
 		]);
+		$this->qstate['meta'] = $reply;
+		if($reply instanceof Success) {
+			$this->qstate['qid'] = $reply->qid ?? -1;
+		} else {
+			$this->qstate['qid'] = -1;
+			$this->qstate['closed'] = true;
+			if($autoResetOnFaiure) {
+				$this->reset();
+			}
+		}
+		return $reply;
 	}
 }

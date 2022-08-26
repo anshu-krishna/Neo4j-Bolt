@@ -3,12 +3,13 @@ namespace Krishna\Neo4j\Protocol;
 
 use Krishna\Neo4j\Ex\BoltEx;
 use Krishna\Neo4j\Helper\ListType;
-use Krishna\Neo4j\Protocol\Reply\{I_Reply, Success};
+use Krishna\Neo4j\Protocol\Reply\{I_Reply, Record, Success};
 
 class Bolt4_1 extends A_Bolt {
 	const VERSION = 4.1;
 	protected array $qstate = [
 		'transact' => false,
+		'qid' => -1,
 		'meta' => null,
 		'closed' => false
 	];
@@ -75,6 +76,15 @@ class Bolt4_1 extends A_Bolt {
 		}
 		return $reply;
 	}
+	public function getQueryMeta(): ?I_Reply {
+		return $this->qstate['meta'];
+	}
+	public function queryValid(): bool {
+		return $this->qstate['meta'] instanceof Success;
+	}
+	public function moreResults(): bool {
+		return $this->qstate['closed'];
+	}
 	public function query(
 		string $query,
 		array $parameters = [],
@@ -85,10 +95,67 @@ class Bolt4_1 extends A_Bolt {
 		bool $readMode = false,
 		?string $db = null
 	): I_Reply {
-		return $this->write('Run', 0x10, [
+		$reply = $this->write('Run', 0x10, [
 			$query,
 			(object) $parameters,
 			static::makeExtra($bookmarks, $tx_timeout, $tx_metadata, $readMode, $db)
 		]);
+		$this->qstate['meta'] = $reply;
+		if($reply instanceof Success) {
+			$this->qstate['qid'] = $reply->qid ?? -1;
+		} else {
+			$this->qstate['qid'] = -1;
+			$this->qstate['closed'] = true;
+			if($autoResetOnFaiure) {
+				$this->reset();
+			}
+		}
+		return $reply;
+	}
+	public function discard(int $count = -1, int $qid = -1): ?I_Reply {
+		if($this->qstate['meta'] === null || $this->qstate['closed']) { return null; }
+		if($qid === -1) {
+			$qid = $this->qstate['qid'];
+		}
+		$reply = $this->write('Discard', 0x2F, [(object) ['n' => $count, 'qid' => $qid]]);
+		if($reply instanceof Success) {
+			$this->qstate['closed'] = !($reply->has_more ?? false);
+		}
+		return $reply;
+	}
+	protected function puller(int $count = -1, int $qid = -1): \Generator {
+		$reply = $this->write('Pull', 0x3F, [(object) ['n' => $count, 'qid' => $qid]]);
+		while(true) {
+			if($reply instanceof Record) {
+				yield $reply;
+				$reply = $this->read('Pull');
+			} else {
+				return $reply;
+			}
+		}
+	}
+	public function pull(int $count = -1, int $qid = -1) {
+		if($this->qstate['meta'] === null || $this->qstate['closed']) { return null; }
+		if($qid === -1) {
+			$qid = $this->qstate['qid'];
+		}
+		$fields = $this->qstate['meta']['fields'] ?? [];
+		$result = [];
+		$iter = $this->puller($count, $qid);
+		foreach($iter as $item) {
+			if($item instanceof Record) {
+				foreach($fields as $i => $key) {
+					$item[$key] = &$item[$i];
+					unset($item[$i]);
+				}
+			}
+			$result[] = $item;
+		}
+		$ret = $iter->getReturn();
+		if(!($ret->has_more ?? false)) {
+			$this->qstate['closed'] = true;
+			$this->qstate['meta'] = $ret;
+		}
+		return ($count === 1) ? ($result[0] ?? null) : $result;
 	}
 }
