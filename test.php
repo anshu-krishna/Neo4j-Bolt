@@ -10,8 +10,8 @@ $neo = new BoltMaker(
 	auth: AuthToken::basic('neo4j', 'open'),
 	logger: new Logger(rowSize: 40)
 );
-$bolt = $neo->useVersion(Ver::V4_1)->makeBolt();
-// $bolt = $neo->makeBolt();
+// $bolt = $neo->useVersion(Ver::V4_1)->makeBolt();
+$bolt = $neo->makeBolt();
 var_dump($bolt::VERSION);
 
 $bolt->beginTransaction();

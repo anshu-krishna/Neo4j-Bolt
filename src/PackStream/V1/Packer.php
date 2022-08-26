@@ -1,7 +1,6 @@
 <?php
 namespace Krishna\Neo4j\PackStream\V1;
 
-use Krishna\Neo4j\Buffer;
 use Krishna\Neo4j\Ex\PackEx;
 use Krishna\Neo4j\Helper\T_StaticOnly;
 
@@ -176,7 +175,7 @@ class Packer {
 		yield pack('n', 1) . chr($struct->sig);
 
 		foreach($struct->fields as $val) {
-			$packed = Buffer::Writable();
+			$packed = \Krishna\Neo4j\Buffer::Writable();
 			foreach(static::pack($val) as $bytes) {
 				$packed->write($bytes);
 			}

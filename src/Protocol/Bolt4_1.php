@@ -60,7 +60,7 @@ class Bolt4_1 extends A_Bolt {
 	): I_Reply {
 		return $this->write('Run', 0x10, [
 			$query,
-			$parameters,
+			(object) $parameters,
 			static::makeExtra($bookmarks, $tx_timeout, $tx_metadata, $readMode, $db)
 		]);
 	}
