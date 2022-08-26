@@ -74,11 +74,21 @@ class BoltMaker {
 			$socket->disconnect();
 			throw new ConnEx("Cannot to connect to Bolt service on {$this->host}:{$this->port}; Looks like HTTP;");
 		}
-		$class = (E_Version::fromBin($pkt))?->toClass();
-		if($class === null) {
+		$ver = E_Version::fromBin($pkt);
+		if($ver === null) {
 			$socket->disconnect();
 			throw new ConnEx("Cannot to connect to Bolt service on {$this->host}:{$this->port}; Unsupported protocol version(s);");
 		}
-		return new ($class)($socket, $this->logger, ['auth' => $this->auth, 'routing' => $this->routing]);
+		
+		/*
+		Use this design if newer versions have diffrent meta parameter requirement
+		return match($ver) {
+			E_Version::V4_4 => new ($ver->toClass())($socket, $this->logger, ['auth' => $this->auth, 'routing' => $this->routing]),
+			E_Version::V4_3 => new ($ver->toClass())($socket, $this->logger, ['auth' => $this->auth, 'routing' => $this->routing]),
+			E_Version::V4_2 => new ($ver->toClass())($socket, $this->logger, ['auth' => $this->auth, 'routing' => $this->routing]),
+			E_Version::V4_1 => new ($ver->toClass())($socket, $this->logger, ['auth' => $this->auth, 'routing' => $this->routing])
+		};
+		*/
+		return new ($ver->toClass())($socket, $this->logger, ['auth' => $this->auth, 'routing' => $this->routing]);
 	}
 }

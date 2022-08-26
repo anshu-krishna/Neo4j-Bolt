@@ -53,7 +53,7 @@ abstract class A_Bolt {
 		try {
 			static::checkConstructMeta($meta);
 		} catch (\Throwable $th) {
-			throw new BoltEx('Invalid meta contents ' . $th->getMessage());
+			throw new BoltEx('Invalid meta parameter in constructor; Expected ["auth" => AuthToken, "routing" => ?array]');
 		}
 		$token = $meta['auth']->token;
 		if($meta['routing'] !== null) {
