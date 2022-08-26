@@ -7,16 +7,16 @@ use Krishna\Neo4j\Protocol\Reply\I_Reply;
 
 class Bolt4_1 extends A_Bolt {
 	const VERSION = 4.1;
-	public function beginTransaction(
-		array $bookmarks = [],
-		int $tx_timeout = -1,
-		?array $tx_metadata = null,
-		bool $readMode = false,
-		?string $db = null
-	): I_Reply {
+	protected static function makeExtra(
+		array $bookmarks,
+		int $tx_timeout,
+		?array $tx_metadata,
+		bool $readMode,
+		?string $db
+	): array {
 		$extra = [];
 		if(ListType::isStringList($bookmarks)) {
-			$extra['bookmarks'] = $bookmarks;
+			$extra['bookmarks'] = array_values($bookmarks);
 		} else {
 			throw new BoltEx('parameter bookmarks must be a list of strings');
 		}
@@ -32,12 +32,36 @@ class Bolt4_1 extends A_Bolt {
 		if($db !== null) {
 			$extra['db'] = $db;
 		}
-		return $this->write('Begin', 0x11, [$extra]);
+		return $extra;
+	}
+	public function beginTransaction(
+		array $bookmarks = [],
+		int $tx_timeout = -1,
+		?array $tx_metadata = null,
+		bool $readMode = false,
+		?string $db = null
+	): I_Reply {
+		return $this->write('Begin', 0x11, [static::makeExtra($bookmarks, $tx_timeout, $tx_metadata, $readMode, $db)]);
 	}
 	public function commit(): I_Reply {
 		return $this->write('Commit', 0x12);
 	}
 	public function rollback(): I_Reply {
 		return $this->write('Rollback', 0x13);
+	}
+	public function query(
+		string $query,
+		array $parameters = [],
+		array $bookmarks = [],
+		int $tx_timeout = -1,
+		?array $tx_metadata = null,
+		bool $readMode = false,
+		?string $db = null
+	): I_Reply {
+		return $this->write('Run', 0x10, [
+			$query,
+			$parameters,
+			static::makeExtra($bookmarks, $tx_timeout, $tx_metadata, $readMode, $db)
+		]);
 	}
 }

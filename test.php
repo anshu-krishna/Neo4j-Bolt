@@ -10,9 +10,11 @@ $neo = new BoltMaker(
 	auth: AuthToken::basic('neo4j', 'open'),
 	logger: new Logger(rowSize: 40)
 );
-// $bolt = $neo->useVersion(Ver::V4_3)->makeBolt();
-$bolt = $neo->makeBolt();
+$bolt = $neo->useVersion(Ver::V4_1)->makeBolt();
+// $bolt = $neo->makeBolt();
 var_dump($bolt::VERSION);
-var_dump($bolt->beginTransaction());
-var_dump($bolt->commit());
-// var_dump($bolt->rollback());
+
+$bolt->beginTransaction();
+// $bolt->commit();
+$bolt->rollback();
+var_dump($bolt->query('match (p:Person)-[a:ACTED_IN]->(m:Movie)<-[d:DIRECTED]-(p) return p.name as person, a.roles as role, collect(m.title) as movie'));
