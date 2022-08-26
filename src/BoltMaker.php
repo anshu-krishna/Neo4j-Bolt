@@ -79,6 +79,6 @@ class BoltMaker {
 			$socket->disconnect();
 			throw new ConnEx("Cannot to connect to Bolt service on {$this->host}:{$this->port}; Unsupported protocol version(s);");
 		}
-		return new ($class)($socket, $this->auth, $this->routing, $this->logger);
+		return new ($class)($socket, $this->logger, ['auth' => $this->auth, 'routing' => $this->routing]);
 	}
 }

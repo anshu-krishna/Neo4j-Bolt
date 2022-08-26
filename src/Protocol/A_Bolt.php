@@ -46,10 +46,18 @@ abstract class A_Bolt {
 		}
 		return ucwords(gettype($value));
 	}
-	public function __construct(protected readonly I_Conn $CONN, AuthToken $auth, ?array $routing, public ?Logger $logger) {
-		$token = $auth->token;
-		if($routing !== null) {
-			$token['routing'] = (object) $routing;
+	protected static function checkConstructMeta(array $meta): void {
+		(function (AuthToken $auth, ?array $routing) {})(...$meta);
+	}
+	public function __construct(protected readonly I_Conn $CONN, public ?Logger $logger, array $meta) {
+		try {
+			static::checkConstructMeta($meta);
+		} catch (\Throwable $th) {
+			throw new BoltEx('Invalid meta contents ' . $th->getMessage());
+		}
+		$token = $meta['auth']->token;
+		if($meta['routing'] !== null) {
+			$token['routing'] = (object) $meta['routing'];
 		}
 		$reply = $this->write('Hello', 0x01, [$token], false);
 		if($reply instanceof Reply\Success) {
