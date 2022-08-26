@@ -10,10 +10,10 @@ class BoltMaker {
 	public static function getVersionMeta(): array {
 		self::$vmeta ??= [
 			['bin' => hex2bin('00000000'), 'class' => null],
-			['bin' => hex2bin('00000104'), 'class' => __NAMESPACE__ . '\Protocol\V4_1\Bolt_4_1'],
-			['bin' => hex2bin('00000204'), 'class' => __NAMESPACE__ . '\Protocol\V4_2\Bolt_4_2'],
-			['bin' => hex2bin('00000304'), 'class' => __NAMESPACE__ . '\Protocol\V4_3\Bolt_4_3'],
-			['bin' => hex2bin('00000404'), 'class' => __NAMESPACE__ . '\Protocol\V4_4\Bolt_4_4'],
+			['bin' => hex2bin('00000104'), 'class' => __NAMESPACE__ . '\Protocol\Bolt_4_1'],
+			['bin' => hex2bin('00000204'), 'class' => __NAMESPACE__ . '\Protocol\Bolt_4_2'],
+			['bin' => hex2bin('00000304'), 'class' => __NAMESPACE__ . '\Protocol\Bolt_4_3'],
+			['bin' => hex2bin('00000404'), 'class' => __NAMESPACE__ . '\Protocol\Bolt_4_4'],
 		];
 		return self::$vmeta;
 	}
