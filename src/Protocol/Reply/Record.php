@@ -4,7 +4,7 @@ namespace Krishna\Neo4j\Protocol\Reply;
 use ArrayObject;
 use Krishna\Neo4j\PackStream\V1\{GenericStruct, I_PackStruct};
 
-class Record extends ArrayObject implements I_PackStruct {
+class Record extends ArrayObject implements I_PackStruct, I_Reply {
 	const SIG = 0x71;
 	
 	public function __construct(array $records) {
@@ -16,5 +16,8 @@ class Record extends ArrayObject implements I_PackStruct {
 	}
 	public function toGenericStruct() : GenericStruct {
 		return new GenericStruct(static::SIG, $this->getArrayCopy());
+	}
+	public function copyToArray(): array {
+		return ['type' => 'Record', 'value' => $this->getArrayCopy()];
 	}
 }

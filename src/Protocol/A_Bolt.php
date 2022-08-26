@@ -5,6 +5,7 @@ use Krishna\Neo4j\Conn\I_Conn;
 use Krishna\Neo4j\{AuthToken, Buffer, Logger};
 use Krishna\Neo4j\Ex\{BoltEx, ConnEx, PackEx};
 use Krishna\Neo4j\PackStream\V1\{GenericStruct, Packer, Unpacker};
+use Krishna\Neo4j\Protocol\Reply\I_Reply;
 
 abstract class A_Bolt {
 	public readonly array $connMeta;
@@ -71,10 +72,10 @@ abstract class A_Bolt {
 	public function __destruct() {
 		$this->disconnect();
 	}
-	protected function write(string $logTitle, int $sig, array $fields = [], bool $autoRetry = true, bool $noReply = false) {
+	protected function write(string $logTitle, int $sig, array $fields = [], bool $autoRetry = true, bool $noReply = false): ?I_Reply {
 		$this->CONN->writeIterable(static::packetGenerator($packet, $sig, $fields));
 		$this->logger?->logWrite($packet, $logTitle);
-		if($noReply) { return; }
+		if($noReply) { return null; }
 		$reply = $this->read($logTitle);
 		if($autoRetry && $reply instanceof Reply\Ignored) {
 			$this->reset();
@@ -84,7 +85,7 @@ abstract class A_Bolt {
 		}
 		return $reply;
 	}
-	protected function read(string $logTitle) {
+	protected function read(string $logTitle): I_Reply {
 		$end = hex2bin('0000');
 		$buffer = Buffer::Writable();
 		do { // NOOP
@@ -100,27 +101,30 @@ abstract class A_Bolt {
 		$value = Unpacker::unpack($buffer);
 		// Convert to Reply Struct
 		if($value instanceof GenericStruct) {
-			$reply = match($value->sig) {
-				0x70 => Reply\Success::fromGenericStruct($value),
-				0x7E => Reply\Ignored::fromGenericStruct($value),
-				0x7F => Reply\Failure::fromGenericStruct($value),
-				0x71 => Reply\Record::fromGenericStruct($value),
-				default => null
+			[$name, $value] = match($value->sig) {
+				0x70 => ['Success', Reply\Success::fromGenericStruct($value)],
+				0x7E => ['Ignored', Reply\Ignored::fromGenericStruct($value)],
+				0x7F => ['Failure', Reply\Failure::fromGenericStruct($value)],
+				0x71 => ['Record', Reply\Record::fromGenericStruct($value)]
 			};
-			if($reply !== null) {
-				$value = $reply;
-			}
+			$this->logger?->logRead(
+				$buffer,
+				"{$logTitle} = {$name}"
+			);
+		} else {
+			$this->logger?->logRead(
+				$buffer,
+				"{$logTitle} = " . static::getTypeName($value)
+			);
+			$this->disconnect();
+			throw new BoltEx('Invalid reply received');
 		}
-		$this->logger?->logRead(
-			$buffer,
-			$logTitle . ' = ' . static::getTypeName($value)
-		);
 		return $value;
 	}
-	protected function reset() {
+	protected function reset(): I_Reply {
 		return $this->write('Reset', 0x02, autoRetry: false);
 	}
-	public function disconnect() {
+	public function disconnect(): void {
 		try {
 			$this->write('Goodbye', 0x02, autoRetry: false, noReply: true);
 		} catch (ConnEx $th) {}

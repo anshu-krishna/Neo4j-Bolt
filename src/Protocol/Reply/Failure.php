@@ -3,7 +3,7 @@ namespace Krishna\Neo4j\Protocol\Reply;
 
 use Krishna\Neo4j\PackStream\V1\{GenericStruct, I_PackStruct};
 
-class Failure implements I_PackStruct {
+class Failure implements I_PackStruct, I_Reply {
 	const SIG = 0x7F;
 
 	public function __construct(
@@ -19,5 +19,11 @@ class Failure implements I_PackStruct {
 			'code' => $this->code,
 			'message' => $this->message
 		]);
+	}
+	public function copyToArray(): array {
+		return ['type' => 'Failure', 'value' => [
+			'code' => $this->code,
+			'message' => $this->message
+		]];
 	}
 }

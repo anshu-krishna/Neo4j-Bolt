@@ -3,6 +3,7 @@ namespace Krishna\Neo4j\Protocol;
 
 use Krishna\Neo4j\Ex\BoltEx;
 use Krishna\Neo4j\Helper\ListType;
+use Krishna\Neo4j\Protocol\Reply\I_Reply;
 
 class Bolt4_1 extends A_Bolt {
 	const VERSION = 4.1;
@@ -12,7 +13,7 @@ class Bolt4_1 extends A_Bolt {
 		?array $tx_metadata = null,
 		bool $readMode = false,
 		?string $db = null
-	) {
+	): I_Reply {
 		$extra = [];
 		if(ListType::isStringList($bookmarks)) {
 			$extra['bookmarks'] = $bookmarks;
@@ -32,5 +33,8 @@ class Bolt4_1 extends A_Bolt {
 			$extra['db'] = $db;
 		}
 		return $this->write('Begin', 0x11, [$extra]);
+	}
+	public function commit(): I_Reply {
+
 	}
 }
