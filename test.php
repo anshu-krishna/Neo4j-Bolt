@@ -12,4 +12,4 @@ $neo = new BoltMaker(
 );
 $bolt = $neo->useVersion(Ver::V4_2, Ver::V4_1)->makeBolt();
 
-var_dump($bolt->connMeta);
+var_dump($bolt->beginTransaction());

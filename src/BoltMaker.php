@@ -10,10 +10,10 @@ class BoltMaker {
 	public static function getVersionMeta(): array {
 		self::$vmeta ??= [
 			['bin' => hex2bin('00000000'), 'class' => null],
-			['bin' => hex2bin('00000104'), 'class' => __NAMESPACE__ . '\Protocol\Bolt_4_1'],
-			['bin' => hex2bin('00000204'), 'class' => __NAMESPACE__ . '\Protocol\Bolt_4_2'],
-			['bin' => hex2bin('00000304'), 'class' => __NAMESPACE__ . '\Protocol\Bolt_4_3'],
-			['bin' => hex2bin('00000404'), 'class' => __NAMESPACE__ . '\Protocol\Bolt_4_4'],
+			['bin' => hex2bin('00000104'), 'class' => __NAMESPACE__ . '\Protocol\Bolt4_1'],
+			['bin' => hex2bin('00000204'), 'class' => __NAMESPACE__ . '\Protocol\Bolt4_2'],
+			['bin' => hex2bin('00000304'), 'class' => __NAMESPACE__ . '\Protocol\Bolt4_3'],
+			['bin' => hex2bin('00000404'), 'class' => __NAMESPACE__ . '\Protocol\Bolt4_4'],
 		];
 		return self::$vmeta;
 	}
@@ -60,7 +60,7 @@ class BoltMaker {
 		$this->protocols = $p;
 		return $this;
 	}
-	public function makeBolt(): A_Bolt {
+	public function makeBolt(): Protocol\Bolt4_4 | Protocol\Bolt4_3 | Protocol\Bolt4_2 | Protocol\Bolt4_1 | A_Bolt {
 		$socket = new ($this->connType->value);
 		$socket->connect($this->host, $this->port, $this->timeout);
 		$pkt = Buffer::Writable(hex2bin('6060b017'));
