@@ -95,6 +95,9 @@ class Bolt4_1 extends A_Bolt {
 		bool $readMode = false,
 		?string $db = null
 	): I_Reply {
+		if($this->moreResults()) {
+			throw new BoltEx('Previous query is active. Please \'pull all\' or \'discard\' previous query.');
+		}
 		$reply = $this->write('Run', 0x10, [
 			$query,
 			(object) $parameters,
@@ -103,6 +106,7 @@ class Bolt4_1 extends A_Bolt {
 		$this->qstate['meta'] = $reply;
 		if($reply instanceof Success) {
 			$this->qstate['qid'] = $reply->qid ?? -1;
+			$this->qstate['closed'] = false;
 		} else {
 			$this->qstate['qid'] = -1;
 			$this->qstate['closed'] = true;

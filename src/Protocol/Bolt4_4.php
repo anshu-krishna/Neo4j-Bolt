@@ -48,6 +48,9 @@ class Bolt4_4 extends Bolt4_3 {
 		?string $db = null,
 		?string $imp_user = null
 	): I_Reply {
+		if($this->moreResults()) {
+			throw new BoltEx('Previous query is active. Please \'pull all\' or \'discard\' previous query.');
+		}
 		$reply = $this->write('Run', 0x10, [
 			$query,
 			(object) $parameters,
