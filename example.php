@@ -3,6 +3,7 @@
 require_once "vendor/autoload.php";
 
 use Krishna\Neo4j\{AuthToken, BoltMaker, Logger, E_Version as Ver};
+use Krishna\Neo4j\Conn\E_ConnType;
 
 set_time_limit(5);
 

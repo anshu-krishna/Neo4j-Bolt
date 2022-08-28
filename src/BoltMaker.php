@@ -24,9 +24,10 @@ class BoltMaker {
 		private readonly AuthToken $auth,
 		string $host = '127.0.0.1',
 		private readonly int $port = 7687,
-		private readonly E_ConnType $connType = E_ConnType::Socket,
+		private readonly E_ConnType $connType = E_ConnType::StreamSocket,
 		private readonly ?array $routing = null,
 		private readonly float $timeout = 15,
+		public readonly array $sslContextOptions = [],
 		private readonly ?Logger $logger = null,
 	) {
 		$this->protocols = [
@@ -61,7 +62,10 @@ class BoltMaker {
 		return $this;
 	}
 	public function makeBolt(): P\Bolt4_4 | P\Bolt4_3 | P\Bolt4_2 | P\Bolt4_1 {
-		$socket = new ($this->connType->value);
+		$socket = match($this->connType) {
+			E_ConnType::Socket => new ($this->connType->value),
+			E_ConnType::StreamSocket => new ($this->connType->value)($this->timeout, $this->sslContextOptions)
+		};
 		$socket->connect($this->host, $this->port, $this->timeout);
 		$pkt = Buffer::Writable(hex2bin('6060b017'));
 		$pkt->writeIterable($this->protocols);
