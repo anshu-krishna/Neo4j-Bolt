@@ -2,13 +2,15 @@
 namespace Krishna\Neo4j\Protocol;
 
 use Krishna\Neo4j\Conn\I_Conn;
-use Krishna\Neo4j\{AuthToken, Buffer, Logger};
+use Krishna\Neo4j\{AuthToken, Buffer, E_State, Logger};
 use Krishna\Neo4j\Ex\{BoltEx, ConnEx, PackEx};
 use Krishna\Neo4j\PackStream\V1\{GenericStruct, Packer, Unpacker};
 use Krishna\Neo4j\Protocol\Reply\I_Reply;
 
 abstract class A_Bolt {
 	public readonly array $connMeta;
+	protected E_State $state = E_State::DISCONNECTED;
+
 	protected static function packetGenerator(?Buffer &$forLog, int $sig, array $fields): iterable {
 		$forLog ??= Buffer::Writable();
 		$length = count($fields);
@@ -50,12 +52,16 @@ abstract class A_Bolt {
 	protected static function checkConstructMeta(array $meta): void {
 		(function (AuthToken $auth, ?array $routing) {})(...$meta);
 	}
+	public function updateTimeout(float $timeout): bool {
+		return $this->CONN->updateTimeout($timeout);
+	}
 	public function __construct(protected readonly I_Conn $CONN, public ?Logger $logger, array $meta) {
 		try {
 			static::checkConstructMeta($meta);
 		} catch (\Throwable $th) {
 			throw new BoltEx('Invalid meta parameter in constructor; Expected ["auth" => AuthToken, "routing" => ?array]');
 		}
+		$this->state = E_State::CONNECTED;
 		$token = $meta['auth']->token;
 		if($meta['routing'] !== null) {
 			$token['routing'] = (object) $meta['routing'];
@@ -72,30 +78,65 @@ abstract class A_Bolt {
 	public function __destruct() {
 		$this->disconnect();
 	}
+	protected function onConnErr(BoltEx $ex) {
+		$this->state = E_State::DEFUNCT;
+		$this->CONN->disconnect();
+		throw $ex;
+	}
+	protected function connRead(int $length): ?string {
+		try { return $this->CONN->read($length); }
+		catch (ConnEx $ex) {
+			$this->state = E_State::DEFUNCT;
+			$this->CONN->disconnect();
+			throw $ex;
+		}
+	}
+	protected function connWrite(string|Buffer $buffer): void {
+		try { $this->CONN->write($buffer); }
+		catch (ConnEx $ex) {
+			$this->state = E_State::DEFUNCT;
+			$this->CONN->disconnect();
+			throw $ex;
+		}
+	}
+	protected function connWriteIterable(iterable $parts): void {
+		try { $this->CONN->writeIterable($parts); }
+		catch (ConnEx $ex) {
+			$this->state = E_State::DEFUNCT;
+			$this->CONN->disconnect();
+			throw $ex;
+		}
+	}
 	protected function write(string $logTitle, int $sig, array $fields = [], bool $autoRetry = true, bool $noReply = false): ?I_Reply {
-		$this->CONN->writeIterable(static::packetGenerator($packet, $sig, $fields));
+		if($this->state->connOff()) {
+			throw new BoltEx('Bolt is in ' . $this->state->stringify() . ' state');
+		}
+		$this->connWriteIterable(static::packetGenerator($packet, $sig, $fields));
 		$this->logger?->logWrite($packet, $logTitle);
 		if($noReply) { return null; }
 		$reply = $this->read($logTitle);
 		if($autoRetry && $reply instanceof Reply\Ignored) {
 			$this->reset();
-			$this->CONN->write($packet);
+			$this->connWrite($packet);
 			$this->logger?->logWrite($packet, $logTitle);
 			$reply = $this->read($logTitle);
 		}
 		return $reply;
 	}
 	protected function read(string $logTitle): I_Reply {
+		if($this->state->connOff()) {
+			throw new BoltEx('Bolt is in ' . $this->state->stringify() . ' state');
+		}
 		$end = hex2bin('0000');
 		$buffer = Buffer::Writable();
 		do { // NOOP
-			$tag = $this->CONN->read(2);
+			$tag = $this->connRead(2);
 		} while($tag === $end);
 		while(true) {
 			if($tag === $end) { break; }
 			$len = unpack('n', $tag)[1] ?? 0;
-			$buffer->write($this->CONN->read($len));
-			$tag = $this->CONN->read(2);
+			$buffer->write($this->connRead($len));
+			$tag = $this->connRead(2);
 		}
 		$buffer->makeReadable();
 		$value = Unpacker::unpack($buffer);
@@ -129,5 +170,6 @@ abstract class A_Bolt {
 			$this->write('Goodbye', 0x02, autoRetry: false, noReply: true);
 		} catch (ConnEx $th) {}
 		$this->CONN->disconnect();
+		$this->state = E_State::DEFUNCT;
 	}
 }

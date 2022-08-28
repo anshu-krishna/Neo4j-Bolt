@@ -8,7 +8,7 @@ set_time_limit(5);
 
 $neo = new BoltMaker(
 	auth: AuthToken::basic('neo4j', 'open'),
-	// logger: new Logger(rowSize: 40)
+	logger: new Logger(rowSize: 40)
 );
 $bolt = $neo->useVersion(Ver::V4_1)->makeBolt();
 // $bolt = $neo->makeBolt();

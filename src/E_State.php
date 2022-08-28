@@ -28,16 +28,16 @@ enum E_State {
 	}
 	public function stringify(): string {
 		return match($this) {
-			self::DISCONNECTED => 'DISCONNECTED',
-			self::CONNECTED => 'CONNECTED',
-			self::DEFUNCT => 'DEFUNCT',
-			self::READY => 'READY',
-			self::STREAMING => 'STREAMING',
-			self::TX_READY => 'TX_READY',
-			self::TX_STREAMING => 'TX_STREAMING',
-			self::FAILED => 'FAILED',
-			self::INTERRUPTED => 'INTERRUPTED',
-			default => 'UNKNOWN'
+			self::DISCONNECTED => 'Disconnected',
+			self::CONNECTED => 'Connected',
+			self::DEFUNCT => 'Defunct',
+			self::READY => 'Ready',
+			self::STREAMING => 'Streaming',
+			self::TX_READY => 'Tx_Ready',
+			self::TX_STREAMING => 'Tx_Streaming',
+			self::FAILED => 'Failed',
+			self::INTERRUPTED => 'Interrupted',
+			default => 'Unknown'
 		};
 	}
 }
