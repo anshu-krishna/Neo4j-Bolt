@@ -1,6 +1,7 @@
 <?php
 namespace Krishna\Neo4j\Protocol;
 
+use Krishna\Neo4j\E_State;
 use Krishna\Neo4j\Ex\BoltEx;
 use Krishna\Neo4j\Protocol\Reply\{I_Reply, Success};
 
@@ -28,12 +29,15 @@ class Bolt4_4 extends Bolt4_3 {
 		?string $db = null,
 		?string $imp_user = null
 	): I_Reply {
-		if($this->qstate['transact']) {
-			throw new BoltEx('Previous transaction has not been closed');
+		if($this->state !== E_State::READY) {
+			throw new BoltEx('Bolt is not in Ready state');
 		}
 		$reply = $this->write('Begin', 0x11, [static::makeExtra($bookmarks, $tx_timeout, $tx_metadata, $readMode, $db, $imp_user)]);
 		if($reply instanceof Success) {
-			$this->qstate['transact'] = true;
+			$this->state = E_State::TX_READY;
+			$this->transaction = true;
+		} else {
+			$this->state = E_State::FAILED;
 		}
 		return $reply;
 	}
@@ -56,12 +60,11 @@ class Bolt4_4 extends Bolt4_3 {
 			(object) $parameters,
 			static::makeExtra($bookmarks, $tx_timeout, $tx_metadata, $readMode, $db, $imp_user)
 		]);
-		$this->qstate['meta'] = $reply;
+		$this->qmeta = $reply;
 		if($reply instanceof Success) {
-			$this->qstate['qid'] = $reply->qid ?? -1;
+			$this->state = $this->transaction ? E_State::TX_STREAMING : E_State::STREAMING;
 		} else {
-			$this->qstate['qid'] = -1;
-			$this->qstate['closed'] = true;
+			$this->state = E_State::FAILED;
 			if($autoResetOnFaiure) {
 				$this->reset();
 			}

@@ -6,10 +6,13 @@ use Krishna\Neo4j\{AuthToken, Buffer, E_State, Logger};
 use Krishna\Neo4j\Ex\{BoltEx, ConnEx, PackEx};
 use Krishna\Neo4j\PackStream\V1\{GenericStruct, Packer, Unpacker};
 use Krishna\Neo4j\Protocol\Reply\I_Reply;
+use Krishna\Neo4j\Protocol\Reply\Success;
 
 abstract class A_Bolt {
 	public readonly array $connMeta;
 	protected E_State $state = E_State::DISCONNECTED;
+	protected ?I_Reply $qmeta = null;
+	protected bool $transaction = false;
 
 	protected static function packetGenerator(?Buffer &$forLog, int $sig, array $fields): iterable {
 		$forLog ??= Buffer::Writable();
@@ -69,9 +72,14 @@ abstract class A_Bolt {
 		$reply = $this->write('Hello', 0x01, [$token], false);
 		if($reply instanceof Reply\Success) {
 			$this->connMeta = $reply->getArrayCopy();
+			$this->state = E_State::READY;
 		} elseif($reply instanceof Reply\Failure) {
+			$this->state = E_State::DEFUNCT;
+			$this->CONN->disconnect();
 			throw new ConnEx($reply->message, $reply->code);
 		} else {
+			$this->state = E_State::DEFUNCT;
+			$this->CONN->disconnect();
 			throw new BoltEx('Unknown Error');
 		}
 	}
@@ -115,11 +123,14 @@ abstract class A_Bolt {
 		$this->logger?->logWrite($packet, $logTitle);
 		if($noReply) { return null; }
 		$reply = $this->read($logTitle);
-		if($autoRetry && $reply instanceof Reply\Ignored) {
-			$this->reset();
-			$this->connWrite($packet);
-			$this->logger?->logWrite($packet, $logTitle);
-			$reply = $this->read($logTitle);
+		if($reply instanceof Reply\Ignored) {
+			$this->state = E_State::INTERRUPTED;
+			if($autoRetry) {
+				$this->reset();
+				$this->connWrite($packet);
+				$this->logger?->logWrite($packet, $logTitle);
+				$reply = $this->read($logTitle);
+			}
 		}
 		return $reply;
 	}
@@ -163,7 +174,11 @@ abstract class A_Bolt {
 		return $value;
 	}
 	public function reset(): I_Reply {
-		return $this->write('Reset', 0x02, autoRetry: false);
+		$reply = $this->write('Reset', 0x02, autoRetry: false);
+		if($reply instanceof Success) {
+			$this->state = $this->transaction ? E_State::TX_READY : E_State::READY;
+		}
+		return $reply;
 	}
 	public function disconnect(): void {
 		try {
