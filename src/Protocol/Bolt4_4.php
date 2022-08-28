@@ -3,6 +3,7 @@ namespace Krishna\Neo4j\Protocol;
 
 use Krishna\Neo4j\E_State;
 use Krishna\Neo4j\Ex\BoltEx;
+use Krishna\Neo4j\Helper\ListType;
 use Krishna\Neo4j\Protocol\Reply\{I_Reply, Success};
 
 class Bolt4_4 extends Bolt4_3 {
@@ -68,6 +69,24 @@ class Bolt4_4 extends Bolt4_3 {
 			if($autoResetOnFaiure) {
 				$this->reset();
 			}
+		}
+		return $reply;
+	}
+	public function route(array $routing, array $bookmarks, ?string $db = null, ?string $imp_user = null): I_Reply {
+		if(ListType::isStringList($bookmarks)) {
+			$bookmarks = array_values($bookmarks);
+		} else {
+			throw new BoltEx('parameter bookmarks must be a list of strings');
+		}
+		if($this->transaction) {
+			throw new BoltEx('Cannot send Route message while transaction is active');
+		}
+		$reply = $this->write('Route', 0x66, [(object) $routing, $bookmarks, (object) [
+			'db' => $db,
+			'imp_user' => $imp_user
+		]]);
+		if(!$reply instanceof Success) {
+			$this->state = E_State::FAILED;
 		}
 		return $reply;
 	}
