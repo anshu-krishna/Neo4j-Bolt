@@ -125,9 +125,9 @@ class Bolt4_1 extends A_Bolt {
 	}
 	public function discard(int $count = -1, int $qid = -1): ?I_Reply {
 		if(match($this->state) {
-			E_State::STREAMING => true,
-			E_State::TX_STREAMING => true,
-			default => false
+			E_State::STREAMING => false,
+			E_State::TX_STREAMING => false,
+			default => true
 		}) { return null; }
 		if($qid === -1) {
 			$qid = $this->qmeta?->qid ?? -1;
@@ -173,6 +173,7 @@ class Bolt4_1 extends A_Bolt {
 		$ret = $iter->getReturn();
 		if(!($ret->has_more ?? false)) {
 			$this->state = $this->transaction ? E_State::TX_READY : E_State::READY;
+			$this->qmeta = $ret;
 		}
 		return ($count === 1) ? ($result[0] ?? null) : $result;
 	}
