@@ -19,8 +19,12 @@ return
 limit 2
 CYPHER);
 
-if($run instanceof Success) {
-	echo <<<HTML
+if(!$run instanceof Success) {
+	echo 'Query Error: ', $run->message;
+	exit(0);
+}
+
+echo <<<HTML
 <table border="1">
 	<tr>
 		<th>Person</th> <th>Born</th> <th>Role(s)</th> <th>Movie</th> <th>Released</th>
@@ -40,7 +44,4 @@ HTML;
 ROW;
 	}
 
-	echo '</table>';
-} else {
-	echo 'Query Error: ', $run->message;
-}
+echo '</table>';
