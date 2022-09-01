@@ -124,7 +124,7 @@ $bolt->logger = null;
 ## Protocol functions:
 - Run a query
 	```php
-	query(
+	function query(
 		string $query,
 		array $parameters = [],
 		bool $autoResetOnFaiure = true,
@@ -138,22 +138,22 @@ $bolt->logger = null;
 	
 - Pull results
 	```php
-	pull(int $count = -1, int $qid = -1);
+	function pull(int $count = -1, int $qid = -1);
 	```
 
 - Disconnect
 	```php
-	disconnect(): void;
+	function disconnect(): void;
 	```
 	
 - Reset connection
 	```php
-	reset(): I_Reply;
+	function reset(): I_Reply;
 	```
 
 - Start a transaction
 	```php
-	beginTransaction(
+	function beginTransaction(
 		array $bookmarks = [],
 		int $tx_timeout = -1,
 		?array $tx_metadata = null,
@@ -164,37 +164,37 @@ $bolt->logger = null;
 
 - Commit transaction
 	```php
-	commit(): I_Reply;
+	function commit(): I_Reply;
 	```
 
 - Rollback transaction
 	```php
-	rollback(): I_Reply;
+	function rollback(): I_Reply;
 	```
 
 - Get last query metadata
 	```php
-	getQueryMeta(): ?I_Reply;
+	function getQueryMeta(): ?I_Reply;
 	```
 
 - Check if last query was valid
 	```php
-	queryValid(): bool;
+	function queryValid(): bool;
 	```
 
 - Check if last query has more results
 	```php
-	moreResults(): bool;
+	function moreResults(): bool;
 	```
 
 - Discard results
 	```php
-	discard(int $count = -1, int $qid = -1): ?I_Reply;
+	function discard(int $count = -1, int $qid = -1): ?I_Reply;
 	```
 
 **Only in `Bolt` >= 4.3**
 
 - Send route message
 	```php
-	route(array $routing, array $bookmarks, ?string $db = null): I_Reply;
+	function route(array $routing, array $bookmarks, ?string $db = null): I_Reply;
 	```
