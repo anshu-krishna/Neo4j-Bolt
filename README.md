@@ -139,6 +139,7 @@ $bolt->logger = null;
 - Pull results
 	```php
 	function pull(int $count = -1, int $qid = -1);
+	/* qid is query id */
 	```
 
 - Disconnect
@@ -190,6 +191,7 @@ $bolt->logger = null;
 - Discard results
 	```php
 	function discard(int $count = -1, int $qid = -1): ?I_Reply;
+	/* qid is query id */
 	```
 
 **Only in `Bolt` >= 4.3**
