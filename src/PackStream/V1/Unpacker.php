@@ -48,6 +48,7 @@ class Unpacker {
 		yield static::unpackString($buffer, $tag, $high);
 		yield static::unpackList($buffer, $tag, $high);
 		yield static::unpackMap($buffer, $tag, $high);
+		yield static::unpackBytes($buffer, $tag, $high);
 		yield static::unpackStruct($buffer, $tag, $high);
 	}
 	public static function unpack(Buffer $buffer) {
