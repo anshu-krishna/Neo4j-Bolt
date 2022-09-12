@@ -24,15 +24,17 @@ final class Logger {
 		}
 		return trim(implode('', $hex));
 	}
-	public function log(string $str, ?string $title = null): void {
+	public static function htmlEncode(string $text): string {
+		return htmlentities( $text, flags: ENT_SUBSTITUTE | ENT_HTML5, encoding: 'UTF-8' );
+	}
+	public function log(string $text, ?string $title = null): void {
 		if($this->callback === null) {
-			$str = ($title === null ? '' : "{$title}:\n") . $str;
-			echo '<pre>', htmlentities(
-				$str,
-				flags: ENT_SUBSTITUTE | ENT_HTML5,
-				encoding: 'UTF-8'
-			), '</pre>';
-		} else { ($this->callback)($str, $title); }
+			echo '<pre>';
+			if($title !== null) {
+				echo '<strong>', static::htmlEncode($title), ":</strong>\n";
+			}
+			echo static::htmlEncode($text), '</pre>';
+		} else { ($this->callback)($text, $title); }
 	}
 	
 	public function logRead(string|Buffer $content, ?string $title = null): void {
