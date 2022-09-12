@@ -1,13 +1,22 @@
 <?php
 require_once "vendor/autoload.php";
 
-use Krishna\Neo4j\{AuthToken, BoltMaker};
+use Krishna\Neo4j\{AuthToken, BoltMaker, Logger};
 use Krishna\Neo4j\Protocol\Reply\Success;
 
-// Create Bolt
-$bolt = (new BoltMaker(auth: AuthToken::basic('neo4j', 'open')))->makeBolt();
+$showLogs = array_key_exists('log', $_GET);
 
-echo 'Running Bolt version:', $bolt::VERSION, '<br>';
+// Create Bolt
+$bolt = (new BoltMaker(
+	auth: AuthToken::basic('neo4j', 'open'),
+	logger: $showLogs ? new Logger(): null
+))->makeBolt();
+
+if(!$showLogs) {
+	echo '<h3>Note: Add <u>?log</u> to the GET request to see the socket logs.</h3>';
+}
+
+echo '<strong>Running Bolt version:', $bolt::VERSION, '</strong><br>';
 
 // Run Query
 $run = $bolt->query(<<<CYPHER
@@ -24,16 +33,16 @@ if(!$run instanceof Success) {
 	exit(0);
 }
 
-echo <<<HTML
+$table = [<<<HTML
 <table border="1">
 	<tr>
 		<th>Person</th> <th>Born</th> <th>Role(s)</th> <th>Movie</th> <th>Released</th>
 	</tr>
-HTML;
+HTML];
 	// Pull results
 	foreach($bolt->pull() as $i) {
 		$roles = implode(', ', $i->roles);
-		echo <<<"ROW"
+		$table[] = <<<"ROW"
 <tr>
 	<td>{$i->person->properties['name']}</td>
 	<td>{$i->person->properties['born']}</td>
@@ -44,4 +53,6 @@ HTML;
 ROW;
 	}
 
-echo '</table>';
+$table[] = '</table>';
+
+echo implode('', $table);

@@ -47,7 +47,7 @@ final class Socket implements I_Conn {
 			throw new ConnEx('Socket not initialized');
 		}
 		if($buffer instanceof Buffer) {
-			$size = $buffer->getSize();
+			$size = $buffer->size();
 			$buffer = $buffer->__toString();
 		} else {
 			$size = mb_strlen($buffer, '8bit');
@@ -70,7 +70,7 @@ final class Socket implements I_Conn {
 			if(is_string($buffer)) {
 				$size = mb_strlen($buffer, '8bit');
 			} elseif($buffer instanceof Buffer) {
-				$size = $buffer->getSize();
+				$size = $buffer->size();
 				$buffer = $buffer->__toString();
 			} else {
 				throw new ConnEx('Only string or Buffer can be written');

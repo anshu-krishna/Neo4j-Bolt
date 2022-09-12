@@ -2,8 +2,9 @@
 namespace Krishna\Neo4j;
 
 use Krishna\Neo4j\Ex\BufferEx;
+use Krishna\PackStream\I_ByteSource;
 
-final class Buffer {
+final class Buffer implements I_ByteSource {
 	private array|string $store;
 
 	private ?int $length; // Null means writemode
@@ -69,16 +70,16 @@ final class Buffer {
 		}
 	}
 	public function resetReading(): void { $this->offset = 0; }
-	public function getRemaining(): int {
+	public function unreadSize(): int {
 		if($this->length === null) {
 			throw new BufferEx('Buffer is in write mode');
 		}
 		return $this->length - $this->offset;
 	}
-	public function getReadingOffset(): int {
+	public function readingAt(): int {
 		return $this->offset;
 	}
-	public function getSize(): int {
+	public function size(): int {
 		if($this->length === null) {
 			$size = 0;
 			foreach($this->store as $part) {
@@ -88,7 +89,7 @@ final class Buffer {
 		}
 		return $this->length;
 	}
-	public function getMode(): string {
+	public function mode(): string {
 		return ($this->length === null) ? 'write' : 'read';
 	}
 	public function makeReadable(): void {

@@ -6,7 +6,8 @@
 	"license": "MIT",
 	"version": "1.0.1",
 	"require": {
-		"php": ">=8.1"
+		"php": ">=8.1",
+		"anshu-krishna/neo4j-pack-stream": "^1.0"
 	},
 	"authors": [
 		{

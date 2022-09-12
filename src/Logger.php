@@ -9,7 +9,7 @@ final class Logger {
 		private int $rowSize = 20,
 		private int $wordSize = 4,
 	) {
-		$this->callback = $callback;
+		$this->callback = $callback; // callback signature function (string $str, ?string $title): void;
 	}
 
 	public static function hexify(string $data, int $rowSize = 20, int $wordSize = 4): string {
@@ -25,14 +25,14 @@ final class Logger {
 		return trim(implode('', $hex));
 	}
 	public function log(string $str, ?string $title = null): void {
-		$str = ($title === null ? '' : "{$title}:\n") . $str;
 		if($this->callback === null) {
+			$str = ($title === null ? '' : "{$title}:\n") . $str;
 			echo '<pre>', htmlentities(
 				$str,
 				flags: ENT_SUBSTITUTE | ENT_HTML5,
 				encoding: 'UTF-8'
 			), '</pre>';
-		} else { ($this->callback)($str); }
+		} else { ($this->callback)($str, $title); }
 	}
 	
 	public function logRead(string|Buffer $content, ?string $title = null): void {

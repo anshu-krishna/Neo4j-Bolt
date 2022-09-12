@@ -1,12 +1,11 @@
 <?php
 namespace Krishna\Neo4j\Protocol;
 
+use Krishna\Neo4j\{AuthToken, Buffer, E_State, Logger, PackStream};
 use Krishna\Neo4j\Conn\I_Conn;
-use Krishna\Neo4j\{AuthToken, Buffer, E_State, Logger};
 use Krishna\Neo4j\Ex\{BoltEx, ConnEx, PackEx};
-use Krishna\Neo4j\PackStream\V1\{GenericStruct, Packer, Unpacker};
-use Krishna\Neo4j\Protocol\Reply\I_Reply;
-use Krishna\Neo4j\Protocol\Reply\Success;
+use Krishna\Neo4j\Protocol\Reply\{I_Reply, Success};
+use Krishna\PackStream\{Packer, Structure};
 
 abstract class A_Bolt {
 	public readonly array $connMeta;
@@ -149,15 +148,14 @@ abstract class A_Bolt {
 			$buffer->write($this->connRead($len));
 			$tag = $this->connRead(2);
 		}
-		$buffer->makeReadable();
-		$value = Unpacker::unpack($buffer);
+		$value = PackStream::unpack($buffer);
 		// Convert to Reply Struct
-		if($value instanceof GenericStruct) {
+		if($value instanceof Structure) {
 			[$name, $value] = match($value->sig) {
-				0x70 => ['Success', Reply\Success::fromGenericStruct($value)],
-				0x7E => ['Ignored', Reply\Ignored::fromGenericStruct($value)],
-				0x7F => ['Failure', Reply\Failure::fromGenericStruct($value)],
-				0x71 => ['Record', Reply\Record::fromGenericStruct($value)]
+				0x70 => ['Success', Reply\Success::fromStructure($value)],
+				0x7E => ['Ignored', Reply\Ignored::fromStructure($value)],
+				0x7F => ['Failure', Reply\Failure::fromStructure($value)],
+				0x71 => ['Record', Reply\Record::fromStructure($value)]
 			};
 			$this->logger?->logRead(
 				$buffer,
